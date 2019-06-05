@@ -19,7 +19,7 @@ library(lubridate)
 # From
 #   http://www.ices.dk/marine-data/tools/Pages/Unit-conversions.aspx
 # 1 µg P/l = 1/MW P = 0.032285 µmol/l
-# 1 µg N/l = 1/MW N = 0.071394 µmol/l  ??? must be wrong.  1/0.071394 = 14.01, also check Wikipedia and marelac (below)
+# 1 µg N/l = 1/MW N = 0.071394 µmol/l
 # 1 µg Si/l = 1/MW Si = 0.035606 µmol/l
 # MW SiO3 = 76.083820 µg/l
 # MW Si = 28.085530 µg/l
