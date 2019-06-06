@@ -316,15 +316,14 @@ for (df in list(df_hb_parvalues, df_hb_parvalues_since2014, df_bb_indexvalues, d
 #
 #o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o
 
-df <- df_hb_parvalues
+# df <- df_hb_parvalues
 df <- df_hb_parvalues_since2014
-tab <- xtabs(~year(SAMPLE_DATE) + STATION_NAME, df)
-
+xtabs(~STATION_NAME + PROJECT_NAME, df)
 
 df %>%
-  filter()
+  filter(STATION_NAME %in% "Torgersøy") 
 
-df_map <- df_hb_parvalues %>%
+df_map <- df_hb_parvalues_since2014 %>%
   mutate(Year = year(SAMPLE_DATE)) %>%
   group_by(STATION_CODE, STATION_NAME) %>%
   summarize(LONGITUDE = mean(LONGITUDE), LATITUDE = mean(LATITUDE),
@@ -346,19 +345,19 @@ df_hb_parvalues %>%
 
 xtabs(~INDEX_NAME, df_bb_indexvalues)
 
-df_map <- df_bb_indexvalues %>%
+df_map <- df_hb_parvalues_since2014 %>%
   mutate(Year = year(SAMPLE_DATE)) %>%
   group_by(STATION_CODE, STATION_NAME) %>%
   summarize(LONGITUDE = mean(LONGITUDE), LATITUDE = mean(LATITUDE),
             Years = summarize_sequence(Year),
-            No_indices = length(unique(INDEX_NAME))) %>%
+            No_indices = length(unique(NAME))) %>%
   mutate(Popup_text = paste0(STATION_CODE, ": ", STATION_NAME, "<br>", Years, "<br>", No_indices, " indices"))
 
 library(leaflet)
 leaflet() %>%
   addTiles() %>%  # Default OpenStreetMap map tiles
-  addMarkers(lng = df_ap$LONGITUDE, lat = df_map$LATITUDE,
-             popup = df_ap$Popup_text)
+  addMarkers(lng = df_map$LONGITUDE, lat = df_map$LATITUDE,
+             popup = df_map$Popup_text)
 
 
 
