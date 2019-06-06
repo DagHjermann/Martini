@@ -54,7 +54,11 @@ get_nivabase_data("select * from NIVADATABASE.BB_INDEXES_DESCRIPTION")
 get_nivabase_data("select * from NIVADATABASE.V_BB_GRAB_COLL_SAMPLE where rownum < 4")        
 
 #
-# 3 Get data set with all projects ----
+# 3 Get projects and stations ----
+#
+
+#
+# . a projects ----
 #
 
 df_projects <- get_projects()   # we call it 'df_projects' (the default name used by 'get_stations_from_project')
@@ -74,16 +78,129 @@ proj_names <- c(
   grep("kyo", df_projects$PROJECT_NAME, value = TRUE, ignore.case = TRUE)
 )
 
+
 # get PROJECT_ID
 proj_id <- df_projects %>% 
   filter(PROJECT_NAME %in% proj_names) %>%
   pull(PROJECT_ID)
 
+# Get extra PROJECT_IDs from Steilene (to find Indre Oslofjord projects)
+df <- get_nivabase_data("select * from NIVADATABASE.PROJECTS_STATIONS where STATION_NAME like 'Steilene%'") 
+proj_id_extra <- df_projects %>% filter(PROJECT_ID %in% df$PROJECT_ID) %>% pull(PROJECT_ID)
+
+# Add to project ID list
+proj_id <- c(proj_id, proj_id_extra) %>% unique()
+
+
+#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o
+#
+# . b stations ----
+#
+#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o
+
+df_stations <- get_nivabase_selection(
+  "PROJECT_ID, STATION_ID, STATION_CODE, STATION_NAME",
+  "PROJECTS_STATIONS",
+  "PROJECT_ID",
+  proj_id
+)   
+
+df_stations_geomid <- get_nivabase_selection(
+  "STATION_ID, GEOM_REF_ID",
+  "STATIONS",
+  "STATION_ID",
+  df_stations$STATION_ID
+)   
+
+df_stations_pos <- get_nivabase_selection(
+  "SAMPLE_POINT_ID, LATITUDE, LONGITUDE",
+  "SAMPLE_POINTS",
+  "SAMPLE_POINT_ID",
+  df_stations_geomid$GEOM_REF_ID,
+  owner = "NIVA_GEOMETRY"
+)   
+
+df_stations <- df_stations %>% 
+  left_join(df_stations_geomid) %>%
+  left_join(df_stations_pos, by = c("GEOM_REF_ID" = "SAMPLE_POINT_ID"))
+
+# df_stations %>% filter(STATION_CODE == "514")
+df_stations <- df_stations %>%
+  filter(LONGITUDE > 7.34 & LATITUDE < 60)
+
+nrow(df_stations)  # 1247
+
+# Make interactive map if you wish 
+make_map <- FALSE
+if (make_map){
+  library(leaflet)
+  leaflet() %>%
+    addTiles() %>%  # Default OpenStreetMap map tiles
+    addMarkers(lng = df_stations$LONGITUDE, lat = df_stations$LATITUDE,
+               popup = paste(df_stations$STATION_CODE, df_stations$STATION_NAME))
+}
+
+#
+# . c Check Indre Oslofjord ----
+# Where are the data we find for e..g Nakkholmen in Aquamonitor? (see 'Aquamonitor/data_Nakkholmen.xlsx") 
+# 
 
 df <- get_nivabase_data("select * from NIVADATABASE.PROJECTS_STATIONS where STATION_NAME like 'Steilene%'") 
-df_projects %>% filter(PROJECT_ID %in% df$PROJECT_ID) %>% View()
-df_projects %>% filter(PROJECT_ID %in% df$PROJECT_ID) %>% pull(PROJECT_NAME)
-df_projects %>% filter(PROJECT_ID %in% df$PROJECT_ID) %>% pull(PROJECT_ID)
+# df_projects %>% filter(PROJECT_ID %in% df$PROJECT_ID) %>% View()
+
+df_projects %>% filter(PROJECT_NAME %in% "IO")
+#   PROJECT_ID PROJECT_NAME           PROJECT_DESCRIPTION STARTDATE ENDDATE ENTERED_BY        ENTERED_DATE
+# 1       7526           IO Import fra hardbunnsdatabasen      <NA>    <NA>        WEB 2015-05-07 11:30:52
+df %>% filter(PROJECT_ID %in% 7526)
+get_nivabase_data("select * from NIVADATABASE.PROJECTS_STATIONS where PROJECT_ID = 7526") 
+#   PROJECT_ID STATION_ID STATION_CODE STATION_NAME STATION_IS_ACTIVE PROJECTS_STATION_ID ENTERED_BY        ENTERED_DATE
+# 1       7526      66197         2007    Svartskog                 1               33309        JVE 2015-05-07 11:31:14
+# 2       7526      66198         2006   Nakkholmen                 1               33310        JVE 2015-05-07 11:31:22
+# 3       7526      66199         2002       Borøya                 1               33311        JVE 2015-05-07 11:31:23
+# 4       7526      66200         2004       Ormøya                 1               33312        JVE 2015-05-07 11:31:24
+# 5       7526      66201         2001     Steilene                 1               33313        JVE 2015-05-07 11:31:25
+# 6       7526      66202         2003      Fornebu                 1               33314        JVE 2015-05-07 11:31:25
+# 7       7526      66203         2005     Hovedøya                 1               33315        JVE 2015-05-07 11:31:26
+
+
+#
+# Explore all tables with 'NIVA_TAXON_ID'
+#
+
+# Get all tables with 'NIVA_TAXON_ID'
+df1 <- get_nivabase_data("select OWNER, TABLE_NAME from ALL_TAB_COLUMNS where column_name = 'NIVA_TAXON_ID'")  
+# get taxon ID for 'Fucus distichus', found at Nakkholmen according to Aquamonitor
+df2 <- get_nivabase_data("select * from NIVADATABASE.TAXONOMY where LATIN_NAME = 'Fucus distichus'")  
+
+# Check all tables with NIVA_TAXON_ID for 
+get_table_taxonselection <- function(owner, tablename, taxon_id){
+  txt <- paste0("select * from ", owner, ".", tablename, " where NIVA_TAXON_ID = ", taxon_id)
+  get_nivabase_data(txt)
+}
+# test <- get_table_taxonselection("NIVADATABASE", "HB_PARAMETER_VALUES", 45658)
+# nrow(test)  # 9532
+
+# Get list of tables resulting from quering each table in df1 for 'Fucus distichus'
+df_list <- purrr::map2(df1$OWNER, 
+                       df1$TABLE_NAME, 
+                       get_table_taxonselection, 
+                       taxon_id = df2$NIVA_TAXON_ID[1])
+
+# Get number of rows
+df1$N_Fucus_distichus <- df_list %>% purrr::map_int(~ifelse(mode(.)=="list", nrow(.), NA))
+df1 %>% filter(df1$N_Fucus_distichus > 0)
+#            OWNER                TABLE_NAME N_Fucus_distichus
+# 1   NIVADATABASE                  TAXONOMY                 1
+# 2   NIVADATABASE            TAXONOMY_CODES                 2
+# 3 ARTSDATABANKEN V_HB_SPECIES_OBSERVATIONS                48
+# 4            RBR                  TAXONOMY                 1
+# 5 ARTSDATABANKEN          V_TAXON_AND_INFO                 2
+# 6            EBM                   MY_VIEW                 2
+# 7            EBM           LEVELS_RELATION                 1
+
+i <- which(df1$N_Fucus_distichus > 20)
+View(df_list[[i]])
+
 
 
 #
@@ -150,11 +267,11 @@ xtabs(~year(SAMPLE_DATE) + STATION_ID, df_hb_parvalues)
 
 # Examples
 df_hb_parvalues %>%
-  filter(STATION_ID == 49907 & year(SAMPLE_DATE) == 2009)   # relativ forekomst per meter
+  filter(STATION_ID == 49907 & year(SAMPLE_DATE) == 2009) %>% View()   # relativ forekomst per meter
 df_hb_parvalues %>%
   filter(STATION_ID == 57623 & year(SAMPLE_DATE) == 2009)   # nedre voksegrense (per taxon) + antall arter, shannon index
 df_hb_parvalues %>%
-  filter(STATION_ID == 49907 & year(SAMPLE_DATE) == 2018)   # nedre voksegrense (overall)
+  filter(STATION_ID == 49907 & year(SAMPLE_DATE) == 2018) %>% View()   # nedre voksegrense (overall)
 
 
 
@@ -172,6 +289,8 @@ nrow(df_hb_statvalues)  # 203
 # Add defs
 df_hb_statvalues <- df_hb_statvalues %>%
   left_join(df_hb_pardef %>% select(PARAMETER_ID, NAME, UNIT, DESCRIPTION))
+
+xtabs(~DESCRIPTION, df_hb_statvalues)  
 
 xtabs(~year(FIRST), df_hb_statvalues)  
 xtabs(~year(FIRST) + STATION_ID, df_hb_statvalues)

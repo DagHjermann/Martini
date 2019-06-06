@@ -283,19 +283,32 @@ df_sed_chemvalues <- df_sed_chemvalues %>%
 #o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o
 
 df_hb_parvalues <- df_hb_parvalues %>%
-  left_join(df_stations %>% select(STATION_ID, STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE)) %>%
-  select(STATION_CODE, STATION_NAME, SAMPLE_DATE, DEPTH1, DEPTH2, NAME, LATIN_NAME, VALUE, everything())
+  left_join(df_stations %>% select(STATION_ID, STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE, PROJECT_ID)) %>%
+  left_join(df_projects %>% select(PROJECT_ID, PROJECT_NAME)) %>%
+  mutate(YEAR = year(SAMPLE_DATE), MONTH = month(SAMPLE_DATE)) %>%
+  select(STATION_CODE, STATION_NAME, PROJECT_ID, PROJECT_NAME, YEAR, MONTH, SAMPLE_DATE, DEPTH1, DEPTH2, NAME, LATIN_NAME, VALUE, everything())
+
+df_hb_parvalues_since2014 <- df_hb_parvalues %>%
+  filter(YEAR >= 2014)
 
 df_bb_indexvalues <- df_bb_indexvalues %>%
-  left_join(df_stations %>% select(STATION_ID, STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE)) %>%
-  select(STATION_CODE, STATION_NAME, GRAB_COLLECTION_ID, GRAB_ID, SAMPLE_DATE, DEPTH, INDEX_NAME, VALUE, everything())
+  left_join(df_stations %>% select(STATION_ID, STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE, PROJECT_ID)) %>%
+  left_join(df_projects %>% select(PROJECT_ID, PROJECT_NAME)) %>%
+  mutate(YEAR = year(SAMPLE_DATE), MONTH = month(SAMPLE_DATE)) %>%
+  select(STATION_CODE, STATION_NAME, PROJECT_ID, PROJECT_NAME, GRAB_COLLECTION_ID, GRAB_ID, YEAR, MONTH, SAMPLE_DATE, DEPTH, INDEX_NAME, VALUE, everything())
 
 df_sed_chemvalues <- df_sed_chemvalues %>%
-  left_join(df_stations %>% select(STATION_ID, STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE)) %>%
-  select(STATION_CODE, STATION_NAME, 
+  left_join(df_stations %>% select(STATION_ID, STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE, PROJECT_ID)) %>%
+  left_join(df_projects %>% select(PROJECT_ID, PROJECT_NAME)) %>%
+  mutate(YEAR = year(SAMPLE_DATE), MONTH = month(SAMPLE_DATE)) %>%
+  select(STATION_CODE, STATION_NAME, PROJECT_ID, PROJECT_NAME, 
          SAMPLE_DATE, SAMPLE_ID, WATER_DEPTH, 
          SLICE_ID, DEPTH1, DEPTH2, 
          NAME, UNIT, VALUE, FLAG1, DETECTION_LIMIT, QUANTIFICATION_LIMIT, everything())
+
+# number of rows
+for (df in list(df_hb_parvalues, df_hb_parvalues_since2014, df_bb_indexvalues, df_sed_chemvalues)) 
+  print(nrow(df))
 
 #o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o
 #
@@ -303,6 +316,13 @@ df_sed_chemvalues <- df_sed_chemvalues %>%
 #
 #o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o
 
+df <- df_hb_parvalues
+df <- df_hb_parvalues_since2014
+tab <- xtabs(~year(SAMPLE_DATE) + STATION_NAME, df)
+
+
+df %>%
+  filter()
 
 df_map <- df_hb_parvalues %>%
   mutate(Year = year(SAMPLE_DATE)) %>%
@@ -347,3 +367,13 @@ leaflet() %>%
 # 9. Save/export ----
 #
 #o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o
+
+openxlsx::write.xlsx(df_hb_parvalues, "Test_data/data_hardbottom.xlsx")
+openxlsx::write.xlsx(df_hb_parvalues_since2014, "Test_data/data_hardbottom_since2017.xlsx")
+openxlsx::write.xlsx(df_bb_indexvalues, "Test_data/data_softbottom.xlsx")
+openxlsx::write.xlsx(df_sed_chemvalues, "Test_data/data_sedimentchemistry.xlsx")
+
+# Copied to 
+# \\niva-of5\OSL-Data-NIVA\Avdeling\Vass\316_Miljøinformatikk\Prosjekter\180116_Martini\Datasets
+
+
