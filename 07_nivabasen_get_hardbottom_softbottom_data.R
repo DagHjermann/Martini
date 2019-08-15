@@ -1,6 +1,8 @@
 #
 # Getting hard- and soft-bottom Økokyst data
 #
+# result copied to 
+# \\niva-of5\OSL-Data-NIVA\Avdeling\Vass\316_Miljøinformatikk\Prosjekter\180116_Martini\Datasets
 
 #o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o
 #
@@ -178,6 +180,7 @@ df_hb_parvalues <- df_hb_parvalues %>%
 # xtabs(~year(SAMPLE_DATE) + STATION_ID, df_hb_parvalues)
 
 
+
 #o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o#o
 #
 # 5.Get soft-bottom data (fauna indices) ----
@@ -321,7 +324,7 @@ df <- df_hb_parvalues_since2014
 xtabs(~STATION_NAME + PROJECT_NAME, df)
 
 df %>%
-  filter(STATION_NAME %in% "Torgersøy") 
+  filter(STATION_NAME %in% "Torgersøy")
 
 df_map <- df_hb_parvalues_since2014 %>%
   mutate(Year = year(SAMPLE_DATE)) %>%

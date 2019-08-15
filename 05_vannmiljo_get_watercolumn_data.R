@@ -7,6 +7,8 @@
 # 2. VannmiljoEksport_2019-05-27_havforsuring.xlsx         - all Havforsuring data
 # 3. VannmiljoEksport_2019-05-27_indre_ytre_oslofjord.xlsx - data from "Oslofjorden" (selected i station part) 
 #                                                            and "Tiltaksrettet overvåkning" 
+# Exported to K:
+# "\\niva-of5\OSL-Data-NIVA\Avdeling\Vass\316_Miljøinformatikk\Prosjekter\180116_Martini\Datasets"
 
 library(readxl)
 library(dplyr)
