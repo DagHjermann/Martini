@@ -1,0 +1,108 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(dplyr)
+```
+## Vannmiljø data
+```{r}
+data_hardbottom <- readRDS(file = "Data/04_vannmiljo_hardbottom.rds")
+```
+
+### Get station list
+```{r}
+stations_hardbottom <- data_hardbottom %>%
+  group_by(Vannlokalitet_kode, Vannlokalitet, Long, Lat)  %>%
+  summarize(Year_min = min(Year), Year_max = max(Year), 
+            Oppdragstaker = paste(unique(Oppdragstaker), collapse = ";")
+            )
+stations_hardbottom
+
+```
+### Map stations
+```{r}
+library(leaflet)
+leaflet() %>%
+  addTiles() %>%  # Default OpenStreetMap map tiles
+  addMarkers(lng = stations_hardbottom$Long, 
+             lat = stations_hardbottom$Lat,
+             popup = stations_hardbottom$Vannlokalitet)
+
+```
+
+```{r}
+table(data_hardbottom$Oppdragstaker) # NIVA + NIVA/HI
+```
+
+```{r}
+xtabs(~Parameter_navn, data_hardbottom)
+```
+
+```{r}
+data_hardbottom %>%
+  filter(Parameter_navn == "Dominerende fjæretype: Små og store steiner") %>%
+  head()
+
+data_hardbottom %>%
+  filter(Parameter_navn == "Nedre voksegrense makroalger (takson)") %>%
+  head()
+
+
+```
+
+```{r}
+data_hardbottom %>%
+  filter(Parameter_navn == "Nedre voksegrense makroalger (takson)") %>%
+  xtabs(~addNA(VitenskapligNavn) + Vannlokalitet, .)
+```
+
+```{r}
+data_hardbottom %>%
+  filter(Parameter_navn == "Relativ forekomst makroalger (skala)") %>%
+  # head()
+  xtabs(~Nedre_dyp + Vannlokalitet, .)
+```
+
+## NIVAbase data
+```{r}
+df_hb_parvalues <- readxl::read_excel("Test_data/data_hardbottom.xlsx")
+```
+
+###
+```{r}
+df_hb_parvalues %>%
+  count(NAME, DESCRIPTION)
+```
+
+
+### Stations
+```{r}
+# Get station list
+stations_hardbottom2 <- df_hb_parvalues %>%
+  group_by(STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE)  %>%
+  summarize(Year_min = min(YEAR), Year_max = max(YEAR))
+stations_hardbottom2
+
+```
+
+```{r}
+library(leaflet)
+leaflet() %>%
+  addTiles() %>%  # Default OpenStreetMap map tiles
+  addMarkers(lng = stations_hardbottom2$LONGITUDE, 
+             lat = stations_hardbottom2$LATITUDE,
+             popup = stations_hardbottom2$STATION_NAME)
+
+```
+
+
+
+```{r}
+
+```
+
+
