@@ -1,0 +1,133 @@
+---
+title: "Soft-bottom data (Vannmiljø and NIVAbasen)"
+author: "DHJ"
+date: "15 8 2019"
+output: html_document
+---
+
+
+```{r}
+library(dplyr)
+```
+
+
+```{r}
+# Vannmiljø (script 04)
+data_softbottom <- readRDS(file = "Data/04_vannmiljo_softbottom.rds")
+
+# NIVAbasen (script 07)
+df_sed_chemvalues <- readxl::read_excel("Test_data/data_sedimentchemistry.xlsx")
+df_bb_indexvalues <- readxl::read_excel("Test_data/data_softbottom.xlsx")
+```
+
+
+```{r}
+data_softbottom$Parameter_navn %>% table()
+```
+
+
+
+## Get station lists
+### Vannmiljø
+```{r}
+stations1 <- data_softbottom %>%
+  group_by(Vannlokalitet_kode, Vannlokalitet, Long, Lat)  %>%
+  summarize(Year_min = min(Year), Year_max = max(Year), 
+            Oppdragstaker = paste(unique(Oppdragstaker), collapse = ";")
+            )
+stations1 %>% arrange(Lat, Long)
+```
+
+## Get station list, NIVAbase
+```{r}
+stations2a <- df_sed_chemvalues %>%
+  group_by(STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE)  %>%
+  summarize(Year_min = min(YEAR), Year_max = max(YEAR)) %>%
+  filter(Year_max > 1991)                                      # we skip stations only used in 1991
+
+stations2b <- df_bb_indexvalues %>%
+  group_by(STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE)  %>%
+  summarize(Year_min = min(YEAR), Year_max = max(YEAR)) %>%
+  filter(Year_max > 1991)                                      # we skip stations only used in 1991
+
+stations2a %>% arrange(LATITUDE, LONGITUDE)
+stations2b %>% arrange(LATITUDE, LONGITUDE)
+
+```
+
+```{r}
+df_bb_indexvalues$INDEX_NAME %>% table()
+
+df_bb_indexvalues %>% 
+  filter(INDEX_NAME %in% c("Indikatorartsindeks (ISI)", "ISI/01m2", "ISI/01m2_norm", "ISI2012 Grabb")) %>%
+  xtabs(~YEAR + INDEX_NAME, .)
+```
+
+```{r}
+df_bb_indexvalues %>% 
+  filter(INDEX_NAME %in% "ISI2012 Grabb" & YEAR == 2018) %>%
+  xtabs(~STATION_NAME, .)
+```
+
+
+```{r}
+data_softbottom %>%
+  filter(Vannlokalitet == "Bastøy, BT80" & Year == 2018 & VitenskapligNavn == "Artsuavhengig") %>%
+  filter(Parameter_id == "ISI_2012")
+
+df_bb_indexvalues %>%
+  filter(STATION_NAME == "Bastøy" & YEAR == 2018 & INDEX_NAME %in% "ISI2012 Grabb")
+
+```
+
+```{r}
+library(spatstat)
+
+stations <- bind_rows(
+  stations1 %>% 
+    select(Vannlokalitet_kode, Vannlokalitet, Long, Lat) %>%
+    mutate(Source = "Vannmiljø"),
+  stations2b %>%
+    select(STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE) %>% 
+    rename(Vannlokalitet_kode = STATION_CODE, Vannlokalitet = STATION_NAME, Long = LONGITUDE, Lat = LATITUDE) %>%
+    mutate(Source = "NIVAbase")
+)
+
+```
+
+
+
+### Map stations
+```{r}
+library(leaflet)
+leaflet() %>%
+  addTiles() %>%  # Default OpenStreetMap map tiles
+  addMarkers(lng = subset(stations, Source == "Vannmiljø")$Long, 
+             lat = subset(stations, Source == "Vannmiljø")$Lat,
+             popup = paste(subset(stations, Source == "Vannmiljø")$Source, 
+                           subset(stations, Source == "Vannmiljø")$Vannlokalitet             )
+  ) %>%
+  addCircleMarkers(lng = subset(stations, Source == "NIVAbase")$Long, 
+                   lat = subset(stations, Source == "NIVAbase")$Lat,
+                   popup = paste(subset(stations, Source == "NIVAbase")$Source, 
+                                 subset(stations, Source == "NIVAbase")$Vannlokalitet,
+                                 "-", subset(stations, Source == "NIVAbase")$Vannlokalitet_kode
+                   ),
+                   color = "red"
+  )
+
+
+
+```
+
+```{r}
+# install.packages("spatstat")
+library(spatstat)
+# ?closepairs
+```
+
+```{r}
+stations
+```
+
+
