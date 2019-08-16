@@ -2,7 +2,10 @@
 title: "Soft-bottom data (Vannmiljø and NIVAbasen)"
 author: "DHJ"
 date: "15 8 2019"
-output: html_document
+output: 
+  html_document:
+    keep_md: true  
+    
 ---
 
 
@@ -85,10 +88,10 @@ library(spatstat)
 
 stations <- bind_rows(
   stations1 %>% 
-    select(Vannlokalitet_kode, Vannlokalitet, Long, Lat) %>%
+    select(Vannlokalitet_kode, Vannlokalitet, Long, Lat, Year_min, Year_max) %>%
     mutate(Source = "Vannmiljø"),
   stations2b %>%
-    select(STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE) %>% 
+    select(STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE, Year_min, Year_max) %>% 
     rename(Vannlokalitet_kode = STATION_CODE, Vannlokalitet = STATION_NAME, Long = LONGITUDE, Lat = LATITUDE) %>%
     mutate(Source = "NIVAbase")
 )
@@ -105,13 +108,19 @@ leaflet() %>%
   addMarkers(lng = subset(stations, Source == "Vannmiljø")$Long, 
              lat = subset(stations, Source == "Vannmiljø")$Lat,
              popup = paste(subset(stations, Source == "Vannmiljø")$Source, 
-                           subset(stations, Source == "Vannmiljø")$Vannlokalitet             )
+                           subset(stations, Source == "Vannmiljø")$Vannlokalitet,
+                           "<br>", subset(stations, Source == "Vannmiljø")$Year_min,
+                           "-", subset(stations, Source == "Vannmiljø")$Year_max
+                           
+             )
   ) %>%
   addCircleMarkers(lng = subset(stations, Source == "NIVAbase")$Long, 
                    lat = subset(stations, Source == "NIVAbase")$Lat,
                    popup = paste(subset(stations, Source == "NIVAbase")$Source, 
                                  subset(stations, Source == "NIVAbase")$Vannlokalitet,
-                                 "-", subset(stations, Source == "NIVAbase")$Vannlokalitet_kode
+                                 "<br>", subset(stations, Source == "NIVAbase")$Vannlokalitet_kode,
+                                 "<br>", subset(stations, Source == "NIVAbase")$Year_min,
+                                 "-", subset(stations, Source == "NIVAbase")$Year_max
                    ),
                    color = "red"
   )
@@ -124,10 +133,30 @@ leaflet() %>%
 # install.packages("spatstat")
 library(spatstat)
 # ?closepairs
+
+```
+
+```{r}
+a <- closepaircounts(cells, 0.1)
+sum(a)
+closepairs(cells, 0.1)
+summary(cells)  
+plot(cells)
 ```
 
 ```{r}
 stations
 ```
+
+```{r}
+mypattern <- ppp(stations$Long, stations$Lat, range(stations$Long), range(stations$Lat))
+# plot(mypattern)
+# summary(mypattern)
+# plot(Kest(mypattern))
+# plot(density(mypattern))
+closepaircounts(mypattern, 0.01)
+closepairs(mypattern, 0.01)
+```
+
 
 
