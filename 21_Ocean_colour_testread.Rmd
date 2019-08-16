@@ -1,0 +1,62 @@
+---
+title: "Test read ocean color NetCDF"
+author: "DHJ"
+date: "16 8 2019"
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+## Library
+```{r}
+library(ncdf4)
+```
+
+## Pick file  
+Daily L4 Chl a concentration  
+```{r}
+fns <- dir("Input_data", ".nc")
+fn <- fns[2]
+fn
+```
+
+## Explore file
+```{r}
+# ?ncdf4::ncvar_get
+
+nc <- nc_open(paste0("Input_data/", fn))
+nc$nvars
+str(nc$var, 1)
+str(nc$dim, 1)
+str(nc$dim, 2)
+
+# plot(nc$dim$lat$vals)
+ plot(nc$dim$lon$vals)
+plot(nc$dim$time$vals)
+```
+
+## Read data
+```{r}
+x <- ncvar_get(nc, "CHL")  # reads all 
+dim(x)
+```
+
+## Plot map for a given day
+```{r}
+# Time step number
+i <- 20
+
+# Time in R format 
+time <- as.POSIXct(nc$dim$time$vals[i]*86400, origin = "1900-01-01", tz = "GMT")
+
+x_day <- list(
+  x = nc$dim$lon$vals,
+  y = rev(nc$dim$lat$vals),
+  z = x[,,i][,seq(dim(x)[2],1)]
+)
+
+fields::image.plot(x_day, main = time)
+```
+
+
