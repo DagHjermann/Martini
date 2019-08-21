@@ -1,0 +1,83 @@
+---
+title: "61 Checking NetCDF datasets"
+author: "DHJ"
+date: "21 8 2019"
+output: html_document
+---
+
+Check NetCDF files written by Roald based on NIVAbasen + Vannmiljø exported data    
+
+```{r}
+
+library(loadeR)
+library(dplyr)
+library(purrr)
+
+```
+
+## Test using loadeR
+```{r}
+# Open connection
+datafolder <- "K:/Avdeling/Vass/316_Miljøinformatikk/Prosjekter/180116_Martini/Datasets/derived_netcdf_datasets"
+dir(datafolder)
+
+# File handle
+handle <- dataInventory('input_data/martini_hard_bottom_input_dataset.nc')
+handle <- dataInventory(paste0(datafolder,  "/martini_hard_bottom_input_dataset.nc"))
+handle <- dataInventory(paste0(datafolder,  "/martini_soft_bottom_input_dataset.nc"))
+handle <- dataInventory(paste0(datafolder,  "/martini_sediment_chemistry_input_dataset.nc"))
+handle <- dataInventory(paste0(datafolder,  "/martini_hard_bottom_input_dataset.nc"))
+```
+
+## Test using ncdf4
+```{r}
+library(ncdf4)
+handle <- nc_open(paste0(datafolder,  "/martini_hard_bottom_input_dataset.nc"))
+```
+
+```{r}
+str(handle, 1)
+str(handle, 2)
+str(handle$dim, 2)
+attr(handle, "class")
+```
+
+### Variables
+```{r}
+names(handle)
+str(handle$var, 1)
+str(handle$var$obs_type, 1)
+str(handle$var$obs_type)
+ncdf4.helpers::nc.get.dim.names(handle)
+ncdf4.helpers::nc.get.dim.axes(handle, "obs_type")
+
+ncdf4.helpers::nc.get.dim.axes(handle)
+
+```
+### Dimensions
+```{r}
+str(handle$dim, 1)
+str(handle$dim$state_variable, 1)
+#str(handle$dim$state_variable$dimvarid, 1)
+```
+### Observation types
+```{r}
+attr(handle)
+nc_type <- ncvar_get(handle, "obs_type")
+str(nc_type)
+table(nc_type)
+```
+
+### Observation provenance
+```{r}
+nc_prov <- ncvar_get(handle, "obs_provenance")
+table(nc_prov)
+```
+
+### Observation time
+```{r}
+nc_time <- ncvar_get(handle, "obs_time")
+summary(nc_time)
+
+
+```

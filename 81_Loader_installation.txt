@@ -1,0 +1,138 @@
+
+> install.packages("rJava")
+Installing package into ‘C:/R/Library’
+(as ‘lib’ is unspecified)
+--- Please select a CRAN mirror for use in this session ---
+trying URL 'https://cran.uni-muenster.de/bin/windows/contrib/3.6/rJava_0.9-11.zip'
+Content type 'application/zip' length 832080 bytes (812 KB)
+downloaded 812 KB
+
+package ‘rJava’ successfully unpacked and MD5 sums checked
+
+The downloaded binary packages are in
+        C:\Users\DHJ\AppData\Local\Temp\RtmpEROYQJ\downloaded_packages
+> library(rJava)
+> devtools::install_github(c("SantanderMetGroup/loadeR.java", "SantanderMetGroup/loadeR"))
+Downloading GitHub repo SantanderMetGroup/loadeR.java@master
+from URL https://api.github.com/repos/SantanderMetGroup/loadeR.java/zipball/master
+Installing loadeR.java
+"C:/R/R-3.6.1/bin/x64/R" --no-site-file --no-environ --no-save --no-restore --quiet CMD INSTALL  \
+  "C:/Users/DHJ/AppData/Local/Temp/RtmpEROYQJ/devtools53585431bed/SantanderMetGroup-loadeR.java-88da23e" --library="C:/R/Library" --install-tests 
+
+* installing *source* package 'loadeR.java' ...
+** using staged installation
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+  converting help for package 'loadeR.java'
+    finding HTML links ... done
+    javaCalendarDate2rPOSIXlt               html  
+Rd warning: C:/Users/DHJ/AppData/Local/Temp/RtmpEROYQJ/devtools53585431bed/SantanderMetGroup-loadeR.java-88da23e/man/javaCalendarDate2rPOSIXlt.Rd:17: file link 'POSIXlt' in package 'base' does not exist and so has been treated as a topic
+    javaString2rChar                        html  
+** building package indices
+** testing if installed package can be loaded from temporary location
+*** arch - i386
+*** arch - x64
+** testing if installed package can be loaded from final location
+*** arch - i386
+*** arch - x64
+** testing if installed package keeps a record of temporary installation path
+* DONE (loadeR.java)
+Downloading GitHub repo SantanderMetGroup/loadeR@master
+from URL https://api.github.com/repos/SantanderMetGroup/loadeR/zipball/master
+Installing loadeR
+Installing 1 package: RCurl
+Installing package into ‘C:/R/Library’
+(as ‘lib’ is unspecified)
+trying URL 'https://cran.uni-muenster.de/bin/windows/contrib/3.6/RCurl_1.95-4.12.zip'
+Content type 'application/zip' length 2974210 bytes (2.8 MB)
+downloaded 2.8 MB
+
+package ‘RCurl’ successfully unpacked and MD5 sums checked
+
+The downloaded binary packages are in
+        C:\Users\DHJ\AppData\Local\Temp\RtmpEROYQJ\downloaded_packages
+"C:/R/R-3.6.1/bin/x64/R" --no-site-file --no-environ --no-save --no-restore --quiet CMD INSTALL  \
+  "C:/Users/DHJ/AppData/Local/Temp/RtmpEROYQJ/devtools535878b56e74/SantanderMetGroup-loadeR-4f2ceee" --library="C:/R/Library" --install-tests 
+
+* installing *source* package 'loadeR' ...
+** using staged installation
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+  converting help for package 'loadeR'
+    finding HTML links ... done
+    C4R.vocabulary                          html  
+    C4R.vocabulary.update                   html  
+    UDG.datasets                            html  
+    adjustDates                             html  
+    adjustDates.forecast                    html  
+    adjustRCMgrid                           html  
+    check.dictionary                        html  
+    dataInventory.ASCII                     html  
+    dataInventory.NetCDF                    html  
+    dataInventory                           html  
+    deaccum                                 html  
+    dictionaryLookup                        html  
+    dictionaryTransform                     html  
+    dictionaryTransformForecast             html  
+    dictionaryTransformGrid                 html  
+    findPointXYindex                        html  
+    findVerticalLevel                       html  
+    getForecastTimeDomain                   html  
+    getLatLonDomain                         html  
+    getLatLonDomainStations                 html  
+    getMemberDomain                         html  
+    getRunTimeDomain.decadal                html  
+    getTimeDomain                           html  
+    getTimeDomainStations                   html  
+    getVerticalLevelPars                    html  
+    hurs2huss                               html  
+    huss2hurs                               html  
+    loadCircularGridData                    html  
+Rd warning: C:/Users/DHJ/AppData/Local/Temp/RtmpEROYQJ/devtools535878b56e74/SantanderMetGroup-loadeR-4f2ceee/man/loadCircularGridData.Rd:89: file link 'POSIXct' in package 'base' does not exist and so has been treated as a topic
+    loadDecadalForecast                     html  
+Rd warning: C:/Users/DHJ/AppData/Local/Temp/RtmpEROYQJ/devtools535878b56e74/SantanderMetGroup-loadeR-4f2ceee/man/loadDecadalForecast.Rd:77: file link 'POSIXct' in package 'base' does not exist and so has been treated as a topic
+    loadGridData                            html  
+Rd warning: C:/Users/DHJ/AppData/Local/Temp/RtmpEROYQJ/devtools535878b56e74/SantanderMetGroup-loadeR-4f2ceee/man/loadGridData.Rd:89: file link 'POSIXct' in package 'base' does not exist and so has been treated as a topic
+    loadGridDataset                         html  
+    loadSeasonalForecast                    html  
+    loadStationData                         html  
+    loginUDG                                html  
+    makeAggregatedDataset                   html  
+Rd warning: C:/Users/DHJ/AppData/Local/Temp/RtmpEROYQJ/devtools535878b56e74/SantanderMetGroup-loadeR-4f2ceee/man/makeAggregatedDataset.Rd:24: file link 'regexp' in package 'base' does not exist and so has been treated as a topic
+    makeSubset                              html  
+    makeSubset.decadal                      html  
+    makeSubset.seasonal                     html  
+    mslp2ps                                 html  
+    ndays                                   html  
+    openDataset                             html  
+    revArrayLatDim                          html  
+    scanVarDimensions                       html  
+    stationInfo                             html  
+    string2date                             html  
+    tdps2hurs                               html  
+    timeBoundsValue                         html  
+    timeUnits                               html  
+    writeStationData                        html  
+** building package indices
+** testing if installed package can be loaded from temporary location
+*** arch - i386
+*** arch - x64
+** testing if installed package can be loaded from final location
+*** arch - i386
+*** arch - x64
+** testing if installed package keeps a record of temporary installation path
+* DONE (loadeR)
+> 
+> library(loadeR)
+Loading required package: loadeR.java
+Java version 1.8x amd64 by Oracle Corporation detected
+NetCDF Java Library v4.6.0-SNAPSHOT (23 Apr 2015) loaded and ready
+loadeR version 1.4.15 (2019-07-30) is loaded
+Please use 'citation("loadeR")' to cite this package.
+
