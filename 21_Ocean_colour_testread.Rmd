@@ -11,52 +11,151 @@ output:
 ## Library
 ```{r}
 library(ncdf4)
+library(maps)
+library(mapdata)
+library(dplyr)
+library(ggplot2)
 ```
 
-## Pick file  
-Daily L4 Chl a concentration  
 ```{r}
-fns <- dir("Input_data", ".nc")
-fn <- fns[2]
-fn
+filepath = 'http://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml' # The OPENDAP URL
+nc <- nc_open(filepath)
+
 ```
 
-## Explore file
+```{r}
+Sys.getenv("JAVA_HOME")
+```
+
+
+## 8-day data  
+Note that the 8-day means have time given as UNIX time (seconds sonce 01-01-1970), while the daily means have time given as days since 01-01-1900 (i.e. Excel time)  
+
+### Pick file  
+8-day means L4 Chl a concentration, saved in 3 files. Note that one obs. time, the date 2001-11-18, is not included (as the NetCDF was corrupt). So there is a one-observation gap between files 1 and 2.
+```{r}
+datafolder <- "Input_data/Copernicus"
+fns <- dir(datafolder, ".nc")
+fns
+fn <- "dataset-oc-atl-chl-multi_cci-l4-chl_1km_8days-rep-v02 1997 - 9nov2001 .nc"
+```
+
+### Explore file
 ```{r}
 # ?ncdf4::ncvar_get
 
-nc <- nc_open(paste0("Input_data/", fn))
+nc <- nc_open(paste(datafolder, fn, sep = "/"))
 nc$nvars
 str(nc$var, 1)
 str(nc$dim, 1)
 str(nc$dim, 2)
 
 # plot(nc$dim$lat$vals)
- plot(nc$dim$lon$vals)
-plot(nc$dim$time$vals)
+# plot(nc$dim$lon$vals)
+# plot(nc$dim$time$vals)
 ```
 
-## Read data
+### Read data
 ```{r}
 x <- ncvar_get(nc, "CHL")  # reads all 
 dim(x)
+
+# Range of data
+zlim <- range(x, na.rm = TRUE)
+zlim_plot = log10(zlim)
+
+# Maximum is observed where and when?
+arrayInd(which.max(x), dim(x))
+
+# Close connection to nc file
+nc_close(nc)
 ```
 
-## Plot map for a given day
+### Plot map for a given day
 ```{r}
 # Time step number
-i <- 20
+i <- 32
 
 # Time in R format 
-time <- as.POSIXct(nc$dim$time$vals[i]*86400, origin = "1900-01-01", tz = "GMT")
+time <- as.POSIXct(nc$dim$time$vals, origin = "1970-01-01", tz = "GMT")
+time
+
+# Data for this day
+# The '[,seq(dim(x)[2],1)]' part flips the matrix so it displys with North upwards
+zvar <- x[,,i][,seq(dim(x)[2],1)]
 
 x_day <- list(
   x = nc$dim$lon$vals,
   y = rev(nc$dim$lat$vals),
-  z = x[,,i][,seq(dim(x)[2],1)]
+  z = log10(zvar)
 )
 
-fields::image.plot(x_day, main = time)
+fields::image.plot(x_day, main = time[i], zlim = zlim_plot)
+map("worldHires", regions = c("Norway", "Sweden"), add = TRUE)
+```
+### Plot mean + 20/80 percentiles
+```{r}
+df_stat <- data.frame(
+  time = as.POSIXct(nc$dim$time$vals, origin = "1970-01-01", tz = "GMT"),
+  mean = 10^apply(log10(x), 3, mean, na.rm = TRUE),
+  p20 = apply(x, 3, quantile, probs = 0.2, na.rm = TRUE),
+  p80 = apply(x, 3, quantile, probs = 0.8, na.rm = TRUE)
+  )
+plot(p80 ~ time , type = "l", col = "grey50", log = "y", data = df_stat, 
+     main = "Chl a", ylab = "Mean / Perc20 / Perc80")
+lines(mean ~ time, type = "o", pch = 4, data = df_stat)
+lines(p20 ~ time, col = "grey50", data = df_stat)
+# length(time)
+
+
+```
+
+
+## Daily data  
+One file per year (downloaded using Python, using the batch file 'copernicus_download_daily_chla_skagerrak.bat')  
+Get data  
+```{r}
+datafolder <- "Input_data/Copernicus/Daily"
+fns <- dir(datafolder, ".nc")
+# fns
+fn <- "dataset-oc-atl-chl-multi-l4-oi_1km_daily-rep-v02_2017.nc"
+
+nc <- nc_open(paste(datafolder, fn, sep = "/"))
+
+x <- ncvar_get(nc, "CHL")  # reads all 
+dim(x)
+
+# Range of data
+zlim <- range(x, na.rm = TRUE)
+zlim_plot = log10(zlim)
+
+t <- nc$dim$time$vals
+range(t)
+
+# Maximum is observed where and when?
+arrayInd(which.max(x), dim(x))
+
+# Close connection to nc file
+nc_close(nc)
+
+# Get mean + 20/80 percentiles
+df_stat <- data.frame(
+  time = as.POSIXct(nc$dim$time$vals*24*60*60, origin = "1900-01-01", tz = "GMT"),
+  mean = 10^apply(log10(x), 3, mean, na.rm = TRUE),
+  p10 = apply(x, 3, quantile, probs = 0.1, na.rm = TRUE),
+  p20 = apply(x, 3, quantile, probs = 0.2, na.rm = TRUE),
+  p80 = apply(x, 3, quantile, probs = 0.8, na.rm = TRUE),
+  p90 = apply(x, 3, quantile, probs = 0.9, na.rm = TRUE)
+  )
+
+```
+
+```{r}
+ggplot(df_stat, aes(x = time)) + 
+  geom_ribbon(aes(ymin = p10, ymax = p90), fill = "grey70") +
+  geom_ribbon(aes(ymin = p20, ymax = p80), fill = "grey50") +
+  geom_line(aes(y = mean)) +
+  coord_cartesian(ylim = c(0, 20))
 ```
 
 
