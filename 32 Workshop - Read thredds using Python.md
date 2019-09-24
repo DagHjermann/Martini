@@ -68,10 +68,7 @@ leaflet() %>%
              popup = paste(data_stations$STATION_CODE, data_stations$STATION_NAME))
 ```
 
-```
 ![plot of leaflet map](32_Workshop_-_Read_thredds_using_Python_files/figure-html/leaflet_map.png)
-
-```
 
 ### d. Select one location     
 FÃ¦rder fyr  
