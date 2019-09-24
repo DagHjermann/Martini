@@ -4,8 +4,7 @@ author: "DHJ"
 date: "23 9 2019"
 output: 
   html_document:
-    keep_md: true  
-    toc: true  
+    keep_md: true
 ---
 
 # Reading from met.no's thredds server using Python chunks  
@@ -61,8 +60,17 @@ grid = roppy.SGrid(filehandle) # Create a grid object for our file
 lon = filehandle.variables['lon_rho']
 lat = filehandle.variables['lat_rho']
 
-# Access to the chlorophyll A variable
+# Some variables
+# temp = potential temperaturen
+# salt = salinity
+# N1_p = phosphate/phosphorus
+# N3_n = nitrate/nitrogen
+# chla = chlorophyll A variable
 chla = filehandle.variables['P1_Chl']
+temp = filehandle.variables['temp']
+salt = filehandle.variables['salt']
+phosphate = filehandle.variables['N1_p']
+nitrate = filehandle.variables['N3_p']
 
 # Let's see what the dimensions of this variable is by looping over the dimensions
 for dimension in chla.dimensions:
@@ -99,6 +107,7 @@ print('Grid point longitude: {}'.format(lon[i,j]))
 print('Grid point latitude: {}'.format(lat[i,j]))
 
 ```
+
 
 ### Get the thickness of each depth level at Torbjørnsskjær  
 ```{python}
@@ -191,7 +200,7 @@ plt.show()
 ```
 
 
-## Bring data into R  
+## Bring data back to R  
 
 * The data generated in Python (here, 'ocean_time' and 'chla_at_torbjornskjar') can be accessed in R by putting `py$` in front of them  
 
