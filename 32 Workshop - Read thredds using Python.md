@@ -69,22 +69,7 @@ leaflet() %>%
 ```
 
 ```
-## PhantomJS not found. You can install it with webshot::install_phantomjs(). If it is installed, please make sure the phantomjs executable can be found via the PATH variable.
-```
-
-```
-## Warning in normalizePath(path.expand(path), winslash, mustWork):
-## path[1]="webshot40e472b38c8.png": The system cannot find the file specified
-```
-
-```
-## Warning in file(con, "rb"): cannot open file 'C:
-## \Users\DHJ\AppData\Local\Temp\Rtmp23d8fv\file40e454bb4c22\webshot40e472b38c8.png':
-## No such file or directory
-```
-
-```
-## Error in file(con, "rb"): cannot open the connection
+## Error in supervisor_start(): processx supervisor was not ready after 5 seconds.
 ```
 
 ### d. Select one location     
@@ -379,13 +364,13 @@ data_loc$Date <- as.POSIXct(data_loc$Time_num, origin = "1970-01-01", tz = "UTC"
 plot(Temp ~ Date, type = "b", data_loc)
 ```
 
-![plot of chunk unnamed-chunk-68](figure/unnamed-chunk-68-1.png)
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15-1.png)
 
 ```r
 plot(Temp ~ Salinity, type = "b", data_loc)
 ```
 
-![plot of chunk unnamed-chunk-68](figure/unnamed-chunk-68-2.png)
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15-2.png)
 
 ## 4. Get values by calling Python function   
 
@@ -489,7 +474,7 @@ ggplot(data_locations, aes(x = Date, y = Temp, color = STATION_CODE)) +
   geom_line()
 ```
 
-![plot of chunk unnamed-chunk-72](figure/unnamed-chunk-72-1.png)
+![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19-1.png)
 
 ### e. Plot all results  
 Note: requires tidyr::gather   
@@ -505,5 +490,5 @@ ggplot(df, aes(x = Date, y = Value, color = STATION_CODE)) +
   facet_wrap(vars(Variable), scales = "free_y")
 ```
 
-![plot of chunk unnamed-chunk-73](figure/unnamed-chunk-73-1.png)
+![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-20-1.png)
 
