@@ -69,11 +69,12 @@ leaflet() %>%
 ```
 
 ```
-## Error in supervisor_start(): processx supervisor was not ready after 5 seconds.
+![plot of leaflet map](32_Workshop_-_Read_thredds_using_Python_files/figure-html/leaflet_map.png)
+
 ```
 
 ### d. Select one location     
-FÃ¦rder fyr  
+FÃƒÂ¦rder fyr  
 * Note: this returns a one-row dat frame
 
 ```r
@@ -87,7 +88,7 @@ selected_location
 ## # A tibble: 1 x 5
 ##   STATION_CODE STATION_NAME LONGITUDE LATITUDE     n
 ##   <chr>        <chr>            <dbl>    <dbl> <int>
-## 1 HT4          Færder fyr        10.5     59.0  2200
+## 1 HT4          FÃ¦rder fyr        10.5     59.0  2200
 ```
 
 ## 2. Python part
@@ -364,13 +365,13 @@ data_loc$Date <- as.POSIXct(data_loc$Time_num, origin = "1970-01-01", tz = "UTC"
 plot(Temp ~ Date, type = "b", data_loc)
 ```
 
-![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15-1.png)
+![plot of chunk unnamed-chunk-15](32_Workshop_-_Read_thredds_using_Python_files/figure-html/unnamed-chunk-15-1.png)
 
 ```r
 plot(Temp ~ Salinity, type = "b", data_loc)
 ```
 
-![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15-2.png)
+![plot of chunk unnamed-chunk-15](32_Workshop_-_Read_thredds_using_Python_files/figure-html/unnamed-chunk-15-2.png)
 
 ## 4. Get values by calling Python function   
 
@@ -419,9 +420,9 @@ selected_locations
 ## # A tibble: 3 x 5
 ##   STATION_CODE STATION_NAME LONGITUDE LATITUDE     n
 ##   <chr>        <chr>            <dbl>    <dbl> <int>
-## 1 304          Oddaneskjær       9.86     59.0   954
-## 2 B07          Tromøy            8.94     58.5  1574
-## 3 HT4          Færder fyr       10.5      59.0  2200
+## 1 304          OddaneskjÃ¦r       9.86     59.0   954
+## 2 B07          TromÃ¸y            8.94     58.5  1574
+## 3 HT4          FÃ¦rder fyr       10.5      59.0  2200
 ```
 
 ### c. Use purrr::map to get data for all locations
@@ -474,7 +475,7 @@ ggplot(data_locations, aes(x = Date, y = Temp, color = STATION_CODE)) +
   geom_line()
 ```
 
-![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19-1.png)
+![plot of chunk unnamed-chunk-19](32_Workshop_-_Read_thredds_using_Python_files/figure-html/unnamed-chunk-19-1.png)
 
 ### e. Plot all results  
 Note: requires tidyr::gather   
@@ -490,5 +491,5 @@ ggplot(df, aes(x = Date, y = Value, color = STATION_CODE)) +
   facet_wrap(vars(Variable), scales = "free_y")
 ```
 
-![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-20-1.png)
+![plot of chunk unnamed-chunk-20](32_Workshop_-_Read_thredds_using_Python_files/figure-html/unnamed-chunk-20-1.png)
 
