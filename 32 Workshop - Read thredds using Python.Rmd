@@ -1,0 +1,339 @@
+---
+title: "Workshop - reading thredds data using Python"
+author: "DHJ"
+date: "23 9 2019"
+output: 
+  html_document:
+    keep_md: true
+    toc: true
+    toc_float: true
+
+---
+
+# Reading from met.no's thredds server using Python chunks  
+
+Results from met.no's oceanographic models are stored as huge NetCDF files in the `ncml` format. Those files are too big for downloading; instead one reads just the part of the data that you are interested in. The usual R library for the NetCDF format (`ncdf4`) can read `.nc` files, but not the `ncml` format. A new R libarry called `LoadeR` (that I know of) _can_ read `ncml` files, but was found to not handle the particular format used in the oceanographic model results.   
+  
+However, Python has good tools for this. Fortunately, calling Python from R is pretty easy, and has gotten very elegant using the reticulate package. In this markdown document we use code chunks of two types, R code chunks and Python code chunks.         
+
+The Python code inside the Python chunks are based on Python examples from a Jupyter notebook by  
+Ann-Kristin Sperrevik, see 
+* https://nbviewer.jupyter.org/github/annks/Examples/blob/master/MartiniControlRun.ipynb    
+and   
+* https://github.com/annks/Examples  
+See Ann-Kristin's notebook for more explanation of the Python parts.    
+
+
+
+## 1. R part
+
+### a. Libraries
+```{r, results='hide', message=FALSE}
+library(reticulate)
+use_python("C:/WinPython/WPy64-3720/python-3.7.2.amd64/python.exe")   # my Python installation
+
+library(readxl)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(purrr)
+
+
+```
+
+
+### b. Get raw data and locations
+* Read hard-bottom data, `data_hardbottom`  
+* Then we extract location of the most used stations, `data_loc`  
+    - We use count() to get one line per station  
+    - count() automatocally adds the variable n for sample size  
+    - We then use n to get only stations with >= 500 lines of data  
+    
+```{r}
+data_hardbottom <- read_excel("Test_data/data_hardbottom.xlsx")
+
+data_stations <- data_hardbottom %>%
+  count(STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE) %>%
+  filter(n > 500)
+```
+
+### c. Plot stations in leaflet
+```{r}
+library(leaflet)
+
+leaflet() %>%
+  addTiles() %>%
+  addMarkers(lng = data_stations$LONGITUDE, lat = data_stations$LATITUDE,
+             popup = paste(data_stations$STATION_CODE, data_stations$STATION_NAME))
+
+```
+
+### d. Select one location     
+Færder fyr  
+* Note: this returns a one-row dat frame
+```{r}
+selected_location <- data_stations %>%
+  filter(STATION_CODE == "HT4")
+
+selected_location
+```
+
+## 2. Python part
+
+* Python code is put inside code chunks marked 'python' instead of 'R'
+* Note that you have to avoid Norwegian letters in the Python code, even in the comments - it causes errors (there is probably a way to fix this)  
+
+### a. Connect to thredds server  
+```{python}
+import numpy as np     # Package for scientific computing 
+import pandas as pd    # Package for data frames 
+import matplotlib.pyplot as plt   
+from datetime import datetime,timedelta
+
+from netCDF4 import Dataset #  This is handy for working with netCDF files
+
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+
+import roppy
+
+filepath = 'http://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml' # The OPENDAP URL
+
+filehandle = Dataset(filepath) # open for reading 
+grid = roppy.SGrid(filehandle) # Create a grid object for our file
+
+```
+
+### b. List all variables  
+Lots to choose from!  
+```{python}
+print(filehandle.variables.keys())
+
+```
+
+### c. Get info on one variable
+```{python}
+filehandle.variables['P3_Chl']
+```
+
+### d. Get all variables' long names  
+Note: commented out, as it generates a very long list  
+```{python, result = 'hide'}
+keys = filehandle.variables.keys()
+print('Number of variables:', len(keys))
+print()
+
+# for key in keys:
+#   print(key, '=', filehandle.variables[key].long_name)
+
+```
+
+
+
+### e. Access longitude, latitude and time  and dimensions    
+* This doesn't actually download the data, it just creates a 'pointer' to them  
+```{python}
+# Access to the longitude, latitude coordinates
+
+lon = filehandle.variables['lon_rho']
+lat = filehandle.variables['lat_rho']
+ocean_time = filehandle.variables['ocean_time']
+
+```
+
+### f. Explore dimensions 
+```{python}
+# Let's see what the dimensions of this variable is by looping over the dimensions
+print('Time dimensions:')
+for dimension in ocean_time.dimensions:
+    # We'll print both dimension name, and the size of th dimension
+    print('{}: {}'.format( dimension,  len(filehandle.dimensions[dimension] ) ) )
+
+# And lets look at longitude as well:
+print('\nLongitude (or latitude) dimensions:')   # \n is just "line shift"
+for dimension in lon.dimensions:
+    print( '{}: {}'.format( dimension,  len( filehandle.dimensions[dimension] ) ) )
+
+# And finally let's look at one 'ordinary' variable:
+print('\nDimensions of the temperature variable:')
+temp = filehandle.variables['temp']
+for dimension in temp.dimensions:
+    print( '{}: {}'.format( dimension,  len( filehandle.dimensions[dimension] ) ) )
+
+```
+
+
+
+### g. Find grid cell closest to our chosen station in R      
+* Inside a Python chunk, we can access an R Object (values, vectors, dataframes) by putting `r.` in front of the objects name  
+    - E.g., we access R object `selected_location` by `r.selected_location`  
+* R data frames are converted to a Pandas DataFrame in Python   
+* In a Pandas DataFrame, you access a value by ['column_name'][row_number]  
+* Here we will access the R data frame `selected_location` (which has only one line)
+* We need to access longitude number 1 and latitude number 1 of this data frame -
+but be aware that Python starts counting at zero
+* So to get the first Longitude value, we write  
+    - R version 1: selected_location[1, 'LONGITUDE'] - OR  
+    - R version 2: selected_location$LONGITUDE[1]  
+    - Python: r.selected_location['LONGITUDE'][0]  
+
+```{python}
+# The decimal degree location of the selected station:
+selected_lon = r.selected_location['LONGITUDE'][0]
+selected_lat = r.selected_location['LATITUDE'][0]
+
+# We need to find the grid location closest to the selected coordinates.
+# For the sake of simplicity, let's calculate the sum of the absolute 
+# differences between all grid points latitude and longitude and the 
+# selected coordinates. 
+
+position_diff = np.abs( lat[:] - selected_lat ) + np.abs( lon[:] - selected_lon )
+
+# This line will find the indices of the minimum value in 
+i, j = np.unravel_index( position_diff.argmin(), position_diff.shape )
+
+print('Grid indices of grid point closest to selected location: {}, {}\n'.format(i, j))
+print('Grid point longitude: {}'.format(lon[i,j]))
+print('Grid point latitude: {}'.format(lat[i,j]))
+
+```
+
+
+### h. Getting surface values    
+```{python}
+# The dimensions are in (t,z,y,x) order and as indexi,g in Python starts from zero, 
+# axis = 1 points to the z-dimension. 
+
+times = np.arange(0,360,30) 
+
+# temp = potential temperaturen
+# salt = salinity
+# N1_p = phosphate/phosphorus
+# N3_n = nitrate/nitrogen
+# chla = chlorophyll A
+data_loc = pd.DataFrame({
+  'Station': r.selected_location['STATION_CODE'][0],  
+  'i': i,
+  'j': j,
+  'Time_num': filehandle.variables['ocean_time'][times],
+  'Temp': filehandle.variables['temp'][times,0,i,j],
+  'Salinity': filehandle.variables['salt'][times,0,i,j],
+  'PO4': filehandle.variables['N1_p'][times,0,i,j],
+  'NO3': filehandle.variables['N3_n'][times,0,i,j]
+  })
+
+```
+
+## 3. Bring data back to R  
+
+### a. Collect the data from Python  
+```{r}
+py$data_loc
+
+```
+
+### b. Fix time variable  
+As explained in Ann Kristin's notebook, time is given in seconds since 1. Jan. 1970  
+```{r}
+data_loc <- py$data_loc
+data_loc$Date <- as.POSIXct(data_loc$Time_num, origin = "1970-01-01", tz = "UTC")
+```
+
+### c. A couple of plots
+```{r}
+plot(Temp ~ Date, type = "b", data_loc)
+plot(Temp ~ Salinity, type = "b", data_loc)
+```
+
+## 4. Get values by calling Python function   
+
+### a. Get the function in file "32_Function_get_data.py" and test it  
+Note: for the function to work, we must first have run 2a and 2e above,
+in order to connect to server and define long, lat  
+```{r}
+# Source function (load the function into memory)
+source_python("32_Function_get_data.py")
+
+# Now we can use the function as it was an R function
+get_data(selected_location$STATION_CODE[1],
+         selected_location$LONGITUDE[1], 
+         selected_location$LATITUDE[1],
+         30)
+
+```
+
+### b. Pick several locations
+```{r}
+
+selected_locations <- data_stations %>%
+  filter(STATION_CODE %in% c("HT4", "B07", "304"))
+
+selected_locations
+
+```
+
+### c. Use purrr::map to get data for all locations
+* map performs get_data() for every item sent to it through %>%
+* In this case, we use map_df, which tells R to try to make a single data frame of the data
+* inside map:
+    - the tilde (~) says that the following should be regarded as a function 
+    - the dot (.) symbolizes the input to the function
+* 1:nrow(selected_locations) = 1:3 in this case
+* So map runs 3 times, every time with the dot equal to 1,2,3  
+* I.e, the first time, it runs
+```
+get_data(
+    selected_locations$STATION_CODE[1],
+    selected_locations$LONGITUDE[1], 
+    selected_locations$LATITUDE[1],
+    30)
+```
+The second time: 
+```
+get_data(
+    selected_locations$STATION_CODE[2],
+    selected_locations$LONGITUDE[2], 
+    selected_locations$LATITUDE[2],
+    30)
+```
+Etc.
+    
+```{r}
+
+data_locations <- 1:nrow(selected_locations) %>%
+  map_df(~get_data(
+    selected_locations$STATION_CODE[.],
+    selected_locations$LONGITUDE[.], 
+    selected_locations$LATITUDE[.],
+    30)
+    )
+
+# Make proper time variable
+data_locations$Date <- as.POSIXct(
+  data_locations$Time_num, 
+  origin = "1970-01-01", tz = "UTC")
+
+```
+
+
+### d. Plot result  
+```{r}
+ggplot(data_locations, aes(x = Date, y = Temp, color = STATION_CODE)) +
+  geom_line()
+
+```
+
+### e. Plot all results  
+Note: requires tidyr::gather   
+```{r}
+# Reorganize the data using tidyr::gather
+df <- data_locations %>%
+  tidyr::gather("Variable", "Value", Temp:NO3)
+
+# Plot all
+ggplot(df, aes(x = Date, y = Value, color = STATION_CODE)) +
+  geom_line() +
+  facet_wrap(vars(Variable), scales = "free_y")
+
+```
+
