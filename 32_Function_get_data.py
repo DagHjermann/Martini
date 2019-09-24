@@ -1,6 +1,6 @@
 
 # Getting data 
-def get_data(station_code, long_sel, lat_sel, day_interval):
+def get_surface_data(station_code, long_sel, lat_sel, day_interval):
 
   # We need to find the grid location closest to Torbjornskjaer.
   # For the sake of simplicity, let's calculate the sum of the absolute 
@@ -34,10 +34,10 @@ def get_data(station_code, long_sel, lat_sel, day_interval):
     'i': i,
     'j': j,
     'Time_num': filehandle.variables['ocean_time'][times],
-    'Temp': filehandle.variables['temp'][times,0,i,j],
-    'Salinity': filehandle.variables['salt'][times,0,i,j],
-    'PO4': filehandle.variables['N1_p'][times,0,i,j],
-    'NO3': filehandle.variables['N3_n'][times,0,i,j]
+    'Temp': filehandle.variables['temp'][times,41,i,j],
+    'Salinity': filehandle.variables['salt'][times,41,i,j],
+    'PO4': filehandle.variables['N1_p'][times,41,i,j],
+    'NO3': filehandle.variables['N3_n'][times,41,i,j]
     })
 
   return data_loc

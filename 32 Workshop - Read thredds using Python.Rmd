@@ -3,16 +3,15 @@ title: "Workshop - reading thredds data using Python"
 author: "DHJ"
 date: "23 9 2019"
 output: 
-  html_document:
-    keep_md: true
+  github_document:
+    html_preview: false
     toc: true
-    toc_float: true
 
 ---
 
 # Reading from met.no's thredds server using Python chunks  
 
-Results from met.no's oceanographic models are stored as huge NetCDF files in the `ncml` format. Those files are too big for downloading; instead one reads just the part of the data that you are interested in. The usual R library for the NetCDF format (`ncdf4`) can read `.nc` files, but not the `ncml` format. A new R libarry called `LoadeR` (that I know of) _can_ read `ncml` files, but was found to not handle the particular format used in the oceanographic model results.   
+Results from the oceanographic model (**Norkyst 800**) are stored as huge NetCDF files in the `ncml` format. Those files are too big for downloading; instead one reads just the part of the data that you are interested in. The usual R library for the NetCDF format (`ncdf4`) can read `.nc` files, but not the `ncml` format. A new R libarry called `LoadeR` (that I know of) _can_ read `ncml` files, but was found to not handle the particular format used in the oceanographic model results.   
   
 However, Python has good tools for this. Fortunately, calling Python from R is pretty easy, and has gotten very elegant using the reticulate package. In this markdown document we use code chunks of two types, R code chunks and Python code chunks.         
 
@@ -31,6 +30,8 @@ See Ann-Kristin's notebook for more explanation of the Python parts.
 ```{r, results='hide', message=FALSE}
 library(reticulate)
 use_python("C:/WinPython/WPy64-3720/python-3.7.2.amd64/python.exe")   # my Python installation
+
+use_python("C:\\WinPython\\WPy64-3720\\python-3.7.2.amd64\\python.exe")
 
 library(readxl)
 library(ggplot2)
@@ -55,6 +56,9 @@ data_hardbottom <- read_excel("Test_data/data_hardbottom.xlsx")
 data_stations <- data_hardbottom %>%
   count(STATION_CODE, STATION_NAME, LONGITUDE, LATITUDE) %>%
   filter(n > 500)
+
+data_stations
+
 ```
 
 ### c. Plot stations in leaflet
@@ -63,7 +67,8 @@ library(leaflet)
 
 leaflet() %>%
   addTiles() %>%
-  addMarkers(lng = data_stations$LONGITUDE, lat = data_stations$LATITUDE,
+  addMarkers(lng = data_stations$LONGITUDE, 
+             lat = data_stations$LATITUDE,
              popup = paste(data_stations$STATION_CODE, data_stations$STATION_NAME))
 
 ```
@@ -83,7 +88,12 @@ selected_location
 * Python code is put inside code chunks marked 'python' instead of 'R'
 * Note that you have to avoid Norwegian letters in the Python code, even in the comments - it causes errors (there is probably a way to fix this)  
 
+
+
 ### a. Connect to thredds server  
+* First, load the packages we need using `import` (similar to `library()` in R)  
+* Then we define a 'pointer' called `filehandle`) to the dataset  
+* We also create a `grid` object (named `grid`), which will be used in 2h  
 ```{python}
 import numpy as np     # Package for scientific computing 
 import pandas as pd    # Package for data frames 
@@ -104,6 +114,7 @@ grid = roppy.SGrid(filehandle) # Create a grid object for our file
 
 ```
 
+
 ### b. List all variables  
 Lots to choose from!  
 ```{python}
@@ -123,6 +134,9 @@ keys = filehandle.variables.keys()
 print('Number of variables:', len(keys))
 print()
 
+#
+# UNCOMMENT TO SEE THE WHOLE LIST
+#
 # for key in keys:
 #   print(key, '=', filehandle.variables[key].long_name)
 
@@ -162,8 +176,6 @@ for dimension in temp.dimensions:
 
 ```
 
-
-
 ### g. Find grid cell closest to our chosen station in R      
 * Inside a Python chunk, we can access an R Object (values, vectors, dataframes) by putting `r.` in front of the objects name  
     - E.g., we access R object `selected_location` by `r.selected_location`  
@@ -198,13 +210,45 @@ print('Grid point latitude: {}'.format(lat[i,j]))
 
 ```
 
+### h. Depths of depth layers   
+* In the Norkyst 800 model, there are 42 depth layers from surface to the bottom, no matter how deep it is  
+* Therefore, the actual depth of each depth layer varies  
+* From the `grid` object created in 2a, we can get these depths  
+* Here, we print the depths at the select location given by i,j   
+```{python}
 
-### h. Getting surface values    
+# What type of object is this number? Answer: 'numpy.ma.core.MaskedArray'
+# x = grid.z_w[:,i,j]
+# print(type(x))
+
+print('Depth of each layer (m):\n')
+Z = grid.z_w[: ,i,j]
+print(np.round(Z, 2))
+# print(np.round(Z, 2))
+
+
+print('\n\nThickness of each layer (m):\n')
+dZ = grid.z_w[1:, i,j] - grid.z_w[:-1, i, j]   # i.e., diffrence between one depth and the next
+print(np.round(dZ, 2))
+
+```
+
+
+### i. Getting surface values    
+* For real applications, we would like to download several or all depths  
+* But for demonstration purposes, we will just download the surface value   
+* As we saw in part 2f, there are 42 depth levels ('s_rho')  
+* ... and 2h showed that depths starts at the bottom, so the first depth (depth = 0) is the bottom and
+depth = 41 is the surface (remember, Python starts counting at zero!)
+* Also, we pick every 30th day in order to get a quick download  
 ```{python}
 # The dimensions are in (t,z,y,x) order and as indexi,g in Python starts from zero, 
 # axis = 1 points to the z-dimension. 
 
 times = np.arange(0,360,30) 
+
+print("Get data for day number:")
+print(times)
 
 # temp = potential temperaturen
 # salt = salinity
@@ -216,13 +260,14 @@ data_loc = pd.DataFrame({
   'i': i,
   'j': j,
   'Time_num': filehandle.variables['ocean_time'][times],
-  'Temp': filehandle.variables['temp'][times,0,i,j],
-  'Salinity': filehandle.variables['salt'][times,0,i,j],
-  'PO4': filehandle.variables['N1_p'][times,0,i,j],
-  'NO3': filehandle.variables['N3_n'][times,0,i,j]
+  'Temp': filehandle.variables['temp'][times,41,i,j],
+  'Salinity': filehandle.variables['salt'][times,41,i,j],
+  'PO4': filehandle.variables['N1_p'][times,41,i,j],
+  'NO3': filehandle.variables['N3_n'][times,41,i,j]
   })
 
 ```
+
 
 ## 3. Bring data back to R  
 
@@ -241,7 +286,7 @@ data_loc$Date <- as.POSIXct(data_loc$Time_num, origin = "1970-01-01", tz = "UTC"
 
 ### c. A couple of plots
 ```{r}
-plot(Temp ~ Date, type = "b", data_loc)
+plot(Salinity ~ Date, type = "b", data_loc)
 plot(Temp ~ Salinity, type = "b", data_loc)
 ```
 
@@ -255,10 +300,10 @@ in order to connect to server and define long, lat
 source_python("32_Function_get_data.py")
 
 # Now we can use the function as it was an R function
-get_data(selected_location$STATION_CODE[1],
-         selected_location$LONGITUDE[1], 
-         selected_location$LATITUDE[1],
-         30)
+get_surface_data(selected_location$STATION_CODE[1],
+                 selected_location$LONGITUDE[1], 
+                 selected_location$LATITUDE[1],
+                 30)
 
 ```
 
@@ -273,7 +318,7 @@ selected_locations
 ```
 
 ### c. Use purrr::map to get data for all locations
-* map performs get_data() for every item sent to it through %>%
+* map performs get_surface_data() for every item sent to it through %>%
 * In this case, we use map_df, which tells R to try to make a single data frame of the data
 * inside map:
     - the tilde (~) says that the following should be regarded as a function 
@@ -282,26 +327,24 @@ selected_locations
 * So map runs 3 times, every time with the dot equal to 1,2,3  
 * I.e, the first time, it runs
 ```
-get_data(
-    selected_locations$STATION_CODE[1],
-    selected_locations$LONGITUDE[1], 
-    selected_locations$LATITUDE[1],
-    30)
+get_surface_data(selected_locations$STATION_CODE[1],
+                 selected_locations$LONGITUDE[1], 
+                 selected_locations$LATITUDE[1],
+                 30)
 ```
 The second time: 
 ```
-get_data(
-    selected_locations$STATION_CODE[2],
-    selected_locations$LONGITUDE[2], 
-    selected_locations$LATITUDE[2],
-    30)
+get_surface_data(selected_locations$STATION_CODE[2],
+                 selected_locations$LONGITUDE[2], 
+                 selected_locations$LATITUDE[2],
+                 30)
 ```
 Etc.
     
 ```{r}
 
 data_locations <- 1:nrow(selected_locations) %>%
-  map_df(~get_data(
+  map_df(~get_surface_data(
     selected_locations$STATION_CODE[.],
     selected_locations$LONGITUDE[.], 
     selected_locations$LATITUDE[.],
@@ -326,7 +369,8 @@ ggplot(data_locations, aes(x = Date, y = Temp, color = STATION_CODE)) +
 ### e. Plot all results  
 Note: requires tidyr::gather   
 ```{r}
-# Reorganize the data using tidyr::gather
+# Reorganize the data to "high format" (all data in one column named "Value") 
+#   using tidyr::gather
 df <- data_locations %>%
   tidyr::gather("Variable", "Value", Temp:NO3)
 
