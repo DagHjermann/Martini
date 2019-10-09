@@ -10,3 +10,4 @@ Also: the Vannmiljø nutrient data are in weight per L, Phil's data are in micro
 ### 02_Check_SiO_data.R  
 Checking which units that have been used for silicate data in Arendal st. 2  
 
+THIS IS JUST A TEST
