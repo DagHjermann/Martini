@@ -1,0 +1,69 @@
+---
+title: "Read depth profile data from thredds server, as R function"
+author: "DHJ"
+date: "23 9 2019"
+output: 
+  github_document:
+    html_preview: false
+    toc: true
+
+---
+
+# Read and plot depth profile data from thredds server  
+
+What we will do here, is to  
+1. Select a NIVA station (here, from some hard-bottom data) and get its coordinates    
+2. Get all temperature data from these coordinates  
+3. In R, plot those data as a profile plot  
+
+## 1. Libraries
+```{r, results='hide', message=FALSE}
+library(reticulate)
+use_python("C:/WinPython/WPy64-3720/python-3.7.2.amd64/python.exe")   # my Python installation
+
+use_python("C:\\WinPython\\WPy64-3720\\python-3.7.2.amd64\\python.exe")
+
+library(readxl)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(purrr)
+
+# Functions used here
+source("34_Profile_data_R_functions.R")
+source_python("34_Profile_data_Python_functions.py")
+
+```
+
+
+## 2. Get variable information   
+```{r}
+View(variable_info())
+```
+
+## 3. Get data for two variables at a given position (logitude, latitude)   
+
+### a. Download data (saved as list)
+May take a minute or two  
+```{r}
+X <- read_profile_list(10.5268, 59.0267, c('temp','salt'))
+```
+
+### b. Reformat data to 'long' format for ggplot  
+```{r}
+df <- profile_list2dataframe(X)
+```
+
+### c. Test plots  
+May also smooth the surface before plotting - see script 33  
+```{r}
+ggplot(df, aes(x = Time, y = Depth_mid, fill = temp, height = Depth_hi- Depth_lo)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue4", mid = "green", high = "red2", midpoint = 10)
+
+ggplot(df, aes(x = Time, y = Depth_mid, fill = salt, height = Depth_hi- Depth_lo)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue4", mid = "green", high = "red2", midpoint = 25)
+
+```
+
