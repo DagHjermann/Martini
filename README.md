@@ -11,6 +11,7 @@ Also: the Vannmiljø nutrient data are in weight per L, Phil's data are in micro
 ### [02_Check_SiO_data.R](02_Check_SiO_data.R)  
 Checking which units that have been used for silicate data in Arendal st. 2  
 
-### [34 Profile data function.Rmd](34 Profile data function.Rmd)  
+### 34 Profile data function ###  
+__[Script (.Rmd) file](34%20Profile%20data%20function.Rmd) - [Result (.md) file](https://github.com/DagHjermann/Martini/blob/master/34_Profile_data_function.md)__  
 A script which allows the user to download data from the met.no thredds server in a simple way. E.g., for downloading profile data (a depth x time matrix for e.g. temperature) for one or several positions/stations. Example from script:    
 ![temperature profile](34_Profile_data_function_files/figure-html/unnamed-chunk-5-1.png)  
