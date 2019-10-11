@@ -13,8 +13,21 @@ output:
 
 What we will do here, is to  
 1. List variables (in order to find the variable names we need for step 2)   
-2. Get all temperature and salinity data from given coordinates  
-3. Plot those data (as profile plots and T-S plots)    
+2. Get all temperature and salinity data from given coordinates (all times, all depths)  
+3. Plot those data (as profile plots and T-S plots)  
+  
+To read variable profiles for a single station, just a single line of code is needed, using the
+function read_profile() - see section 2:  
+```
+my_data <- read_profile(10.5268, 59.0267, c('temp','salt'))
+```
+  
+To read variable profiles for several stations, we need a data frame containing 3 columns (station names, longitudes,
+and latitudes) - then this is used as input to the function read_profiles() - see section 4:  
+```
+my_data <- read_profiles(df_stations, "Station", c('N1_p','N3_n'))
+```
+
 
 ## 0. Load libraries and functions  
 
@@ -33,9 +46,10 @@ source_python("34_Profile_data_Python_functions.py")
 ```
 
 
-## 2. Get variable information   
-* Use this function to find out which variables you can download - you must use the name given in the first column (e.g. 'salt'  for salinity)   
-* This includes modelled biological variables (e.g. plankton density) and chemical ones (e.g. nitrate, phosphate)  
+## 1. Get variable information   
+* Use this function to find out which variables you can download and which names to use   
+* you must use the name given in the first column (e.g. `salt`  for salinity). Sometimes it is hard to guess, such as `N1_p`for phosphate  
+* This includes modelled biological variables (e.g. plankton density) and chemical ones (e.g. nitrate, phosphate). See part 4 for example    
 * 'variable_info()' is in fact a Python function (loaded by 'source_python' above), but can be used by R as it was an ordinary R function!   
 
 ```r
@@ -45,21 +59,23 @@ variables <- variable_info()
 View(variables)
 ```
 
-## 3. Get data for two variables at a given position (logitude, latitude)   
+## 2. Read data for a single position  
+Reads data from the thredds server  
 * In this example 
-    - location is the coordinates of Færder hard-bottom station   
-    - variables we ask for is temperature and salinity. Choose names from list above (section 2)
+    - the location (10.52 E, 59.03 N) is the coordinates of Færder hard-bottom station   
+    - the variables we ask for is temperature and salinity. Choose names from list above (section 2)
 * When we don't specify server_url, it uses the default ('http://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml')
 * May take a minute or two    
 
 ```r
-df <- read_profile(10.5268, 59.0267, c('temp','salt'))
+df1 <- read_profile(10.5268, 59.0267, c('temp','salt'))
 
 # The next two lines does the same thing (read_profile just combines those two):
-# (May be useful for debugging in case of errors)
+# May be useful for debugging in case of errors)
 #   X <- read_profile_list(10.5268, 59.0267, c('temp','salt'))  # returns list
-#   df <- profile_list2dataframe(X)                             # returns data.frame
+#   df1 <- profile_list2dataframe(X)                             # returns data.frame
 ```
+
 
 ## 3. Test plots  
 
@@ -67,7 +83,7 @@ df <- read_profile(10.5268, 59.0267, c('temp','salt'))
 May also smooth the surface before plotting - see script 33  
 
 ```r
-ggplot(df, aes(x = Time, y = Depth_mid, fill = temp, height = Depth_hi- Depth_lo)) +
+ggplot(df1, aes(x = Time, y = Depth_mid, fill = temp, height = Depth_hi- Depth_lo)) +
   geom_tile() +
   scale_fill_gradient2(low = "blue4", mid = "green", high = "red2", midpoint = 10)
 ```
@@ -75,7 +91,7 @@ ggplot(df, aes(x = Time, y = Depth_mid, fill = temp, height = Depth_hi- Depth_lo
 ![](34_Profile_data_function_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 ```r
-ggplot(df, aes(x = Time, y = Depth_mid, fill = salt, height = Depth_hi- Depth_lo)) +
+ggplot(df1, aes(x = Time, y = Depth_mid, fill = salt, height = Depth_hi- Depth_lo)) +
   geom_tile() +
   scale_fill_gradient2(low = "blue4", mid = "green", high = "red2", midpoint = 25)
 ```
@@ -89,13 +105,13 @@ Here, using GAM with tensor product smooth (te) which is a bit slow
 library(mgcv)
 
 # Perform GAM and compute the predicted values from the GAM model
-pred <- gam(temp ~ te(as.numeric(Time), Depth_mid, k = 20), data = df) %>% predict()
+pred <- gam(temp ~ te(as.numeric(Time), Depth_mid, k = 20), data = df1) %>% predict()
 
 # Add predicted values
-df$temp_gam = pred
+df1$temp_gam = pred
 
 # Plot predicted values, including contour lines
-ggplot(df, aes(x = Time, y = Depth_mid, fill = temp_gam, height = Depth_hi- Depth_lo)) +
+ggplot(df1, aes(x = Time, y = Depth_mid, fill = temp_gam, height = Depth_hi- Depth_lo)) +
   geom_tile() +
   scale_fill_gradient2(low = "blue4", mid = "green", high = "red2", midpoint = 10) +
   geom_contour(aes(z = temp_gam), binwidth = 2, color = "white")
@@ -106,10 +122,10 @@ ggplot(df, aes(x = Time, y = Depth_mid, fill = temp_gam, height = Depth_hi- Dept
 ### c. T-S plot (temperatur vs. salinity) version 1 
 
 ```r
-df <- df %>%
+df1 <- df1 %>%
   mutate(Depth_binned = cut(Depth_mid, breaks = -c(0,10,20,40,90)))
 
-ggplot(df, aes(x = salt, y = temp)) +
+ggplot(df1, aes(x = salt, y = temp)) +
   geom_point(size = rel(0.5)) +
   facet_grid(rows = vars(Depth_binned), cols = vars(month(Time)))
 ```
@@ -119,17 +135,58 @@ ggplot(df, aes(x = salt, y = temp)) +
 ### d. T-S plot (temperatur vs. salinity) version 2  
 
 ```r
-df <- df %>%
+df1 <- df1 %>%
   mutate(Month_binned = cut(month(Time), breaks = c(0,3,6,9,12), 
                             labels = c("Jan-Mar", "Apr-Jun", "Jul-Sep", "Oct-Dec"))
          )
 
 # Just to check:
-# df %>% count(month(Time), Month_binned)
+# df1 %>% count(month(Time), Month_binned)
 
-ggplot(df, aes(x = salt, y = temp, col = Depth_mid)) +
+ggplot(df1, aes(x = salt, y = temp, col = Depth_mid)) +
   geom_point(size = rel(0.5)) +
   facet_wrap(vars(Month_binned))
 ```
 
 ![](34_Profile_data_function_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+
+## 4. Read data for several positions   
+Input data is a data frame with names and positions  
+
+### a. Get data  
+* In this case, we want phosphate (N1_p) and nitrate (N3_n) from two stations defined by `df_stations`     
+
+```r
+df_stations <- data.frame(
+  Station = c("B07 Tromøy", "HT4 Færder fyr"), 
+  LONGITUDE = c(8.9443, 10.5268), 
+  LATITUDE = c(58.5132, 59.0267)
+  )
+
+df2 <- read_profiles(df_stations, "Station", c('N1_p','N3_n'))
+```
+
+### b. Test plots    
+* Note that the water is much shallower at Tromøy compared to Færder  
+
+```r
+ggplot(df2, aes(x = Time, y = Depth_mid, fill = N1_p, height = Depth_hi- Depth_lo)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue4", mid = "green", high = "red2", midpoint = 0.4) +
+  facet_grid(cols = vars(ID)) +
+  labs(title = "Phosphate (N1_p)")
+```
+
+![](34_Profile_data_function_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
+```r
+ggplot(df2, aes(x = Time, y = Depth_mid, fill = N3_n, height = Depth_hi- Depth_lo)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue4", mid = "green", high = "red2", midpoint = 5) +
+  facet_grid(cols = vars(ID)) +
+  labs(title = "Nitrate (N3_n)")
+```
+
+![](34_Profile_data_function_files/figure-html/unnamed-chunk-9-2.png)<!-- -->
+
