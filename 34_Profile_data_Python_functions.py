@@ -1,4 +1,22 @@
-def read_profile_python(input_lon, input_lat, variables):
+#
+# Reads data from thredds
+# This function is 'operated' by 'read_profile_list()' (see script '34_Profile_data_R_functions.R')
+#
+# Input:
+#   input_lon, input_lat: - desired position for the data. The function finds the closest point in the model
+#   variables: variables that we want, as a vector of strings. E.g. ('temp', 'salt')
+#   filepath: url for server
+#   
+# Returns data as a Python dict, which becomes a named list in R  
+# List components:
+#   time_unix: numeric - time given as the number of seconds since 01-01-1970 
+#   variables: a 1-dim array of variable names (same as those give as input). To find names, use variable_info(), see below  
+#   values: a list with one item per variable. Each item is a matrix (depth x time) of values
+#   i,j: indices for x,y-position in the model 
+#   lon,lat: actual position for the x,y-position in the model  
+#   Z: bottom and top of each depth layer, starting from the bottom. Length = number of layers plus 1
+# 
+def read_profile_python(input_lon, input_lat, variables, filepath):
   import numpy as np     # Package for scientific computing 
   import pandas as pd    # Package for data frames 
   import matplotlib.pyplot as plt   
@@ -7,7 +25,7 @@ def read_profile_python(input_lon, input_lat, variables):
   import roppy
 
   # Connect to server
-  filepath = 'http://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml' # The OPENDAP URL
+   # The OPENDAP URL
   filehandle = Dataset(filepath) # open for reading 
   grid = roppy.SGrid(filehandle) # Create a grid object for our file - used to get depth layers
 
@@ -64,6 +82,12 @@ def read_profile_python(input_lon, input_lat, variables):
 
   return result
 
+
+#
+# Gets unit for a given variable
+# Used by variable_info()
+# Needs its own function, since not all variables have 'unit' (in contrast to 'name' and 'long_name')
+#
 def get_unit(variable):
   try:
     unit = filehandle.variables[variable].units
@@ -71,7 +95,10 @@ def get_unit(variable):
     unit = "NA"
   return unit
 
-  
+#
+# Returns a pandas DataFrame (in R: data.frame) with 3 variables: name, long name and unit  
+# Is used to fine 'name'
+#
 def variable_info():
   import numpy as np
   import pandas as pd

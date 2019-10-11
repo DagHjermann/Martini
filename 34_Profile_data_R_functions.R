@@ -1,9 +1,23 @@
 #
+# Read profile data from OpenDAP server
+# Returns a data frame in 'long' format (suitable for ggplot)
+#
+read_profile <- function(input_lon, input_lat, 
+                         variable_names,
+                         server_url = 'http://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml'){
+  X <- read_profile_list(10.5268, 59.0267, c('temp','salt'), server_url)
+  profile_list2dataframe(X)
+}
+
+
+#
 # Read data using Python function
 # Returns list (including a time variable)
 #
-read_profile_list <- function(input_lon, input_lat, variable_name){
-  result <- read_profile_python(input_lon, input_lat, variable_name)
+read_profile_list <- function(input_lon, input_lat, 
+                              variable_names, 
+                              server_url = 'http://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml'){
+  result <- read_profile_python(input_lon, input_lat, variable_names, server_url)
   # Remove one level from value list
   for (i in seq_along(result$values))
     result$values[[i]] <- result$values[[i]][[1]]
