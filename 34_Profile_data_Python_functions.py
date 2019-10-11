@@ -35,10 +35,15 @@ def read_profile_python(input_lon, input_lat, variables, filepath):
   ocean_time = filehandle.variables['ocean_time']
 
   # We need to find the grid location closest to the selected coordinates.
-  # For the sake of simplicity, let's calculate the sum of the absolute 
+  # For the sake of simplicity, we calculate the length in meters of 1 degree longitude and 
+  #   1 degree latitude at the latitude of the desired point
+  # This is then used to calculate the approximate distance in kilometers to all points
   # differences between all grid points latitude and longitude and the 
   # selected coordinates. 
-  position_diff = np.abs( lat[:] - input_lat ) + np.abs( lon[:] - input_lon )
+  lon_meters, lat_meters = arclength(input_lat)
+  distance_lon = lon_meters*np.abs( lon[:] - input_lon ) / 1000
+  distance_lat = lat_meters*np.abs( lat[:] - input_lat ) / 1000
+  position_diff = np.sqrt( np.square(distance_lon)  + np.square(distance_lat) )
 
   # This line will find the indices of the minimum value in 
   i, j = np.unravel_index( position_diff.argmin(), position_diff.shape )
@@ -78,9 +83,27 @@ def read_profile_python(input_lon, input_lat, variables, filepath):
   # loc_datetime = np.array(datetime_list)
 
   # result = {'time_unix':loc_time, 'values':loc_variable, 'i':i, 'j':j, 'lon':lon[i,j], 'lat':lat[i,j], 'Z':Z}
-  result = {'time_unix':loc_time, 'variables':variables, 'values':value_list, 'i':i, 'j':j, 'lon':lon[i,j], 'lat':lat[i,j], 'Z':Z}
+  result = {'time_unix':loc_time, 'variables':variables, 'values':value_list, 
+            'i':i, 'j':j, 'lon':lon[i,j], 'lat':lat[i,j], 'Z':Z}
 
   return result
+
+#
+# length of 1 degree longitude and 1 degree latitude (in meters), given latitude
+#      Input = latitude (-180 - 180)
+#        From https://en.wikipedia.org/wiki/Latitude#Length_of_a_degree_of_latitude
+#
+def arclength(lat):
+  from math import sin, cos, pi, sqrt
+  lat_rad = lat*pi/180
+  a  = 6378137.0
+  b = 6356752.3142
+  e2 = (a**2 - b**2)/(a**2)
+  Q = 1 - e2*(sin(lat_rad))**2
+  long_m = pi*a*cos(lat_rad)/(180*sqrt(Q))
+  lat_m = pi*a*(1-e2)/(180*(Q**(3/2)))
+  return [long_m, lat_m]
+
 
 
 #
