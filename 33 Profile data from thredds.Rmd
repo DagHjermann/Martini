@@ -9,8 +9,13 @@ output:
 
 ---
 
-# Read and plot depth profile data from thredds server
+# Read and plot depth profile data from thredds server  
 
+What we will do here, is to  
+1. Select a NIVA station (here, from some hard-bottom data) and get its coordinates    
+2. Get all temperature data from these coordinates  
+3. In R, plot those data as a profile plot  
+4. Save data on the server, then donload those files to your own computer  
 
 ## 1. R part
 
@@ -221,17 +226,6 @@ print(np.round(dZ, 2))
 
 ```
 
-```{python}
-
-for dimension in ocean_time.dimensions:
-    # We'll print both dimension name, and the size of th dimension
-    print()
-    # print('{}: {}'.format( dimension,  len(filehandle.dimensions[dimension] ) ) )
-
-# len(ocean_time.dimensions)
-# ocean_time.dimensions
-
-```
 
 ### i. Getting values    
 * For real applications, we would like to download several or all depths  
@@ -258,13 +252,6 @@ times = np.arange(0,max_time,1)
 
 loc_time = filehandle.variables['ocean_time'][times]
 loc_temp = filehandle.variables['temp'][times,:,i,j]
-
-```
-
-```{python}
-len(loc_time)
-
-loc_temp
 
 ```
 
@@ -371,3 +358,28 @@ ggplot(loc_data, aes(x = Time, y = Depth_mid, fill = Temp_gam2, height = Depth_h
   scale_fill_gradient2(low = "blue4", mid = "green", high = "red2", midpoint = 10) +
   geom_contour(aes(z = Temp_gam2), binwidth = 2, color = "white")
 ```
+
+## 4. Bring plots/data back to your computer  
+1. Save plots and/or data (see below)   
+2. In JupyterLab (unless you are in RStudio), click the folder symbol on the top left of the screen to open file directory  
+3. Mark files and right-click to download  
+4. If you have many files, you can use zip() in R. Example:  
+    - zip("my_zipfile.zip", c("graph1.png", "graph2.png", "graph3.png"))  
+
+### Plots
+```{r}
+gg <- ggplot(loc_data, aes(x = Time, y = Depth_mid, fill = Temp_gam2, height = Depth_hi- Depth_lo)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue4", mid = "green", high = "red2", midpoint = 10) +
+  geom_contour(aes(z = Temp_gam2), binwidth = 2, color = "white")
+ggsave("Figures/33_Færder_temp_profile.png", gg)
+
+```
+
+### Data
+```{r}
+write.csv(loc_data, "Data/33_Færder_loc_data.csv")
+
+```
+
+
