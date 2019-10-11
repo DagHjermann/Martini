@@ -29,9 +29,11 @@ my_data <- read_profiles(df_stations, "Station", c('N1_p','N3_n'))
 ```
 
 
-## 0. Load libraries and functions  
+## 0. Load libraries and functions   
+__NOTE:__ See comment about use_python() in code. You probably need to change it (if you use Python on your local computer) or delete it or comment it out (if you are on JupyterHub) 
 ```{r, results='hide', message=FALSE}
 library(reticulate)
+# NOTE: the next line refers to my local Python program. On JupyterHub, you can delete this!
 use_python("C:/WinPython/WPy64-3720/python-3.7.2.amd64/python.exe")   # my Python installation
 library(ggplot2)
 library(lubridate)
