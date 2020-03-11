@@ -8,7 +8,7 @@
 #
 read_profile <- function(input_lon, input_lat, 
                          variable_names,
-                         server_url = 'http://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml'){
+                         server_url = 'https://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml'){
   X <- read_profile_list(input_lon, input_lat, variable_names, server_url)
   profile_list2dataframe(X)
 }
@@ -20,7 +20,7 @@ read_profile <- function(input_lon, input_lat,
 #
 read_profile_list <- function(input_lon, input_lat, 
                               variable_names, 
-                              server_url = 'http://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml'){
+                              server_url = 'https://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml'){
   result <- read_profile_python(input_lon, input_lat, variable_names, server_url)
   # Remove one level from value list
   for (i in seq_along(result$values))
@@ -79,7 +79,7 @@ read_profiles <- function(input_data,
                           variable_names,
                           lon_column = NULL,
                           lat_column = NULL,
-                          server_url = 'http://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml'){
+                          server_url = 'https://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml'){
   
     k <- grep("lon", colnames(input_data), ignore.case = TRUE)[1]
     if (length(k) == 0)
