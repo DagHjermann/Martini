@@ -52,7 +52,7 @@ if (Sys.getenv("RSTUDIO_USER_IDENTITY") %in% "DHJ"){  # if DHJ has logged on
   use_python("C:/WinPython/WPy64-3720/python-3.7.2.amd64/python.exe")
 } else {
   # otherwise, we assume we are on Jupyterhub
-  use_python("opt/conda/bin/python")
+  use_python("/opt/conda/bin/python/")
 }
 
 
