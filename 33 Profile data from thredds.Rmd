@@ -22,15 +22,22 @@ What we will do here, is to
 ### a. Libraries
 ```{r, results='hide', message=FALSE}
 library(reticulate)
-use_python("C:/WinPython/WPy64-3720/python-3.7.2.amd64/python.exe")   # my Python installation
-
-use_python("C:\\WinPython\\WPy64-3720\\python-3.7.2.amd64\\python.exe")
-
 library(readxl)
 library(ggplot2)
 library(lubridate)
 library(dplyr)
 library(purrr)
+
+#
+# If you are on your personal computer: add the place where you have installed your Python 
+#
+if (Sys.getenv("RSTUDIO_USER_IDENTITY") %in% "DHJ"){  # if DHJ has logged on
+  # Dag's Python installation
+  use_python("C:/WinPython/WPy64-3720/python-3.7.2.amd64/python.exe")
+} else {
+  # otherwise, we assume we are on Jupyterhub
+  use_python("C:/WinPython/WPy64-3720/python-3.7.2.amd64/python.exe")
+}
 
 
 ```
@@ -100,7 +107,7 @@ import cartopy.feature as cfeature
 
 import roppy
 
-filepath = 'http://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml' # The OPENDAP URL
+filepath = 'https://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml' # The OPENDAP URL
 
 filehandle = Dataset(filepath) # open for reading 
 grid = roppy.SGrid(filehandle) # Create a grid object for our file

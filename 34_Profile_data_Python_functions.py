@@ -128,7 +128,7 @@ def variable_info():
   from netCDF4 import Dataset #  This is handy for working with netCDF files
 
   # Connect to server
-  filepath = 'http://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml' # The OPENDAP URL
+  filepath = 'https://thredds.met.no/thredds/dodsC/metusers/arildb/MARTINI800_prov_v2.ncml' # The OPENDAP URL
   filehandle = Dataset(filepath) # open for reading 
   keys = filehandle.variables.keys()
   print('Number of variables:', len(keys))
